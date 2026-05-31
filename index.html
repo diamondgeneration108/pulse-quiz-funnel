@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Найди свою программу — Pulse AI-тренер</title>
+  <style>
+    :root {
+      --primary: #7B61FF;
+      --primary-light: #EDE9FF;
+      --bg: #FFFFFF;
+      --text: #1A1A2E;
+      --accent: #FF6B6B;
+      --gray: #F5F5F7;
+      --gray-text: #6B7280;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      padding: 24px 20px 40px;
+      flex-direction: column;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .screen.active { display: flex; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* LOGO */
+    .logo {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+      margin-bottom: 32px;
+    }
+
+    /* PROGRESS BAR */
+    .progress-wrap {
+      margin-bottom: 32px;
+    }
+
+    .progress-label {
+      font-size: 13px;
+      color: var(--gray-text);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: var(--gray);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    /* QUESTION */
+    .question-num {
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .question-text {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 32px;
+      color: var(--text);
+    }
+
+    /* OPTIONS */
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      border: 2px solid #E5E7EB;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 16px;
+      background: var(--bg);
+      text-align: left;
+      width: 100%;
+    }
+
+    .option:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .option.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .option-emoji { font-size: 22px; flex-shrink: 0; }
+    .option-text { font-size: 15px; line-height: 1.4; color: var(--text); }
+
+    /* BUTTONS */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 18px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: opacity 0.2s, transform 0.1s;
+      text-decoration: none;
+      margin-top: 24px;
+    }
+
+    .btn:hover { opacity: 0.9; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--gray);
+      color: var(--text);
+    }
+
+    /* RESULT SCREEN */
+    .result-badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 99px;
+      margin-bottom: 16px;
+    }
+
+    .result-title {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .result-desc {
+      font-size: 16px;
+      color: var(--gray-text);
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .result-features {
+      background: var(--gray);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .result-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .result-feature:last-child { margin-bottom: 0; }
+
+    .check { color: var(--primary); font-size: 18px; flex-shrink: 0; }
+
+    .preview-block {
+      background: var(--gray);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .preview-title {
+      font-size: 13px;
+      color: var(--gray-text);
+      margin-bottom: 12px;
+    }
+
+    .preview-items {
+      display: flex;
+      gap: 8px;
+    }
+
+    .preview-item {
+      flex: 1;
+      background: white;
+      border-radius: 10px;
+      padding: 14px 8px;
+      filter: blur(3px);
+      font-size: 12px;
+      color: var(--gray-text);
+      text-align: center;
+    }
+
+    .btn-sub {
+      font-size: 13px;
+      color: var(--gray-text);
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* EMAIL SCREEN */
+    .email-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .screen-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .screen-sub {
+      font-size: 15px;
+      color: var(--gray-text);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .form-group { margin-bottom: 14px; }
+
+    .form-input {
+      width: 100%;
+      padding: 16px 18px;
+      border: 2px solid #E5E7EB;
+      border-radius: var(--radius);
+      font-size: 16px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus { border-color: var(--primary); }
+
+    .disclaimer {
+      font-size: 12px;
+      color: var(--gray-text);
+      text-align: center;
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+
+    /* THANK YOU */
+    .thank-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .steps {
+      background: var(--gray);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .step {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 16px;
+      align-items: flex-start;
+    }
+
+    .step:last-child { margin-bottom: 0; }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .step-text { font-size: 15px; line-height: 1.5; padding-top: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- QUIZ SCREEN -->
+<div class="screen active" id="screen-quiz">
+  <div class="logo">Pulse</div>
+  <div class="progress-wrap">
+    <div class="progress-label" id="progress-label">Вопрос 1 из 4</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width: 25%"></div>
+    </div>
+  </div>
+
+  <div id="question-container"></div>
+
+  <button class="btn" id="btn-next" onclick="nextQuestion()" disabled>Далее →</button>
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="screen" id="screen-result">
+  <div class="logo">Pulse</div>
+  <div class="result-badge">Твоя программа готова ✨</div>
+  <div class="result-title" id="result-title">Старт без напряга</div>
+  <div class="result-desc" id="result-desc">Описание программы</div>
+
+  <div class="result-features">
+    <div class="result-feature"><span class="check">✓</span> Персональный план на 4 недели</div>
+    <div class="result-feature"><span class="check">✓</span> Тренировки под твой уровень и время</div>
+    <div class="result-feature"><span class="check">✓</span> AI-тренер проверяет технику в реальном времени</div>
+    <div class="result-feature"><span class="check">✓</span> Адаптация если стало легче или тяжелее</div>
+  </div>
+
+  <div class="preview-block">
+    <div class="preview-title">Превью первых упражнений</div>
+    <div class="preview-items">
+      <div class="preview-item">Упр. 1<br>●●●</div>
+      <div class="preview-item">Упр. 2<br>●●●</div>
+      <div class="preview-item">Упр. 3<br>●●●</div>
+    </div>
+  </div>
+
+  <button class="btn" onclick="showScreen('email')">Получить полную программу →</button>
+  <div class="btn-sub">Бесплатно. Пришлём на email когда AI-тренер выйдет в мае.</div>
+</div>
+
+<!-- EMAIL SCREEN -->
+<div class="screen" id="screen-email">
+  <div class="logo">Pulse</div>
+  <div class="email-icon">📩</div>
+  <div class="screen-title">Куда прислать твою программу?</div>
+  <div class="screen-sub">AI-тренер выходит в мае. Мы пришлём тебе программу и сообщим первой — в день запуска.</div>
+
+  <form id="email-form" action="https://formspree.io/f/xlgvkogo" method="POST" onsubmit="handleSubmit(event)">
+    <input type="hidden" name="program" id="form-program">
+    <div class="form-group">
+      <input class="form-input" type="text" name="name" placeholder="Как тебя зовут?" required>
+    </div>
+    <div class="form-group">
+      <input class="form-input" type="email" name="email" placeholder="Твой email" required>
+    </div>
+    <button class="btn" type="submit">Пришлите мне программу</button>
+  </form>
+  <div class="disclaimer">Никакого спама. Только одно письмо с программой и одно — в день запуска AI-тренера.</div>
+</div>
+
+<!-- THANK YOU SCREEN -->
+<div class="screen" id="screen-thanks">
+  <div class="logo">Pulse</div>
+  <div class="thank-icon">🎯</div>
+  <div class="screen-title">Готово — ждём тебя в мае!</div>
+  <div class="screen-sub">Твоя программа сохранена. Мы пришлём её на email как только AI-тренер будет готов.</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">В мае ты получишь письмо с доступом к программе</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">AI-тренер увидит твою технику через камеру и покажет что исправить</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">Начнёшь тренироваться правильно — с первого дня</div>
+    </div>
+  </div>
+
+  <a href="https://apps.apple.com" class="btn btn-secondary">Пока ждёшь — попробуй Pulse бесплатно →</a>
+</div>
+
+<script>
+  const questions = [
+    {
+      num: 1,
+      text: "Что тебя привело сюда?",
+      options: [
+        { emoji: "🎯", text: "Хочу похудеть и почувствовать себя лучше", value: "lose" },
+        { emoji: "💪", text: "Хочу стать сильнее и набрать форму", value: "gain" },
+        { emoji: "🚶", text: "Просто хочу больше двигаться — без фанатизма", value: "move" },
+        { emoji: "🔄", text: "Возвращаюсь после паузы — нужен мягкий старт", value: "return" }
+      ]
+    },
+    {
+      num: 2,
+      text: "Как ты тренируешься сейчас?",
+      options: [
+        { emoji: "🌱", text: "Почти не тренируюсь — начинаю с нуля", value: "beginner" },
+        { emoji: "⏸️", text: "Раньше занималась, потом остановилась", value: "paused" },
+        { emoji: "🏃", text: "Иногда тренируюсь, но без системы", value: "casual" },
+        { emoji: "🔥", text: "Занимаюсь регулярно — хочу сделать лучше", value: "regular" }
+      ]
+    },
+    {
+      num: 3,
+      text: "Где тебе удобнее тренироваться?",
+      options: [
+        { emoji: "🏠", text: "Дома — без поездок и залов", value: "home" },
+        { emoji: "🏋️", text: "В зале — но нужна программа", value: "gym" },
+        { emoji: "🌍", text: "Везде — главное чтобы было что делать", value: "any" }
+      ]
+    },
+    {
+      num: 4,
+      text: "Сколько времени можешь уделять за раз?",
+      options: [
+        { emoji: "⚡", text: "15 минут — немного, но регулярно", value: "15" },
+        { emoji: "✅", text: "30 минут — нормальная тренировка", value: "30" },
+        { emoji: "🕐", text: "45 минут и больше — готова работать серьёзно", value: "45" }
+      ]
+    }
+  ];
+
+  const programs = {
+    "start": {
+      title: "Старт без напряга",
+      desc: "Для тех кто начинает с нуля или возвращается после долгой паузы. 15–20 минут в день, дома, без оборудования — главное войти в ритм и не бросить на второй неделе. AI-тренер следит за техникой и не даёт перегореть."
+    },
+    "return": {
+      title: "Возвращение в форму",
+      desc: "Для тех кто раньше тренировался и знает как это работает — но потерял ритм. Программа стартует мягко и наращивает нагрузку по мере восстановления. Не нужно начинать с нуля — нужно вспомнить."
+    },
+    "home": {
+      title: "Рельеф дома",
+      desc: "Для тех кто хочет видимый результат без зала. 30–45 минут, дома или где удобно, прогрессивная нагрузка без тренажёров. AI-тренер адаптирует каждую тренировку под то как ты себя чувствуешь сегодня."
+    },
+    "gym": {
+      title: "Зал без тренера",
+      desc: "Для тех кто ходит в зал но тренируется интуитивно — без системы и прогрессии. Структурированная программа с весами, периодизацией и трекингом каждого подхода. Растёшь — потому что видишь цифры."
+    },
+    "move": {
+      title: "В движении",
+      desc: "Для тех кто не хочет рекордов — хочет просто чувствовать себя активным и живым. Короткие тренировки 15 минут, разнообразные, без давления на результат. Главный критерий: тебе нравится."
+    }
+  };
+
+  let currentQ = 0;
+  let answers = [];
+  let selectedOption = null;
+
+  function getProgram(ans) {
+    if (!ans[2]) return "start";
+    if (ans[2] === "gym") return "gym";
+    if (ans[0] === "move") return "move";
+    if (ans[0] === "return" || ans[1] === "paused") return "return";
+    if (ans[1] === "beginner") return "start";
+    return "home";
+  }
+
+  function renderQuestion() {
+    const q = questions[currentQ];
+    const progress = ((currentQ + 1) / questions.length) * 100;
+    document.getElementById('progress-fill').style.width = progress + '%';
+    document.getElementById('progress-label').textContent = `Вопрос ${currentQ + 1} из ${questions.length}`;
+
+    const container = document.getElementById('question-container');
+    container.innerHTML = `
+      <div class="question-num">Вопрос ${q.num}</div>
+      <div class="question-text">${q.text}</div>
+      <div class="options" id="options-list"></div>
+    `;
+
+    const optsList = document.getElementById('options-list');
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.innerHTML = `<span class="option-emoji">${opt.emoji}</span><span class="option-text">${opt.text}</span>`;
+      btn.onclick = () => selectOption(i, opt.value, btn);
+      optsList.appendChild(btn);
+    });
+
+    selectedOption = null;
+    document.getElementById('btn-next').disabled = true;
+  }
+
+  function selectOption(idx, value, btn) {
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedOption = value;
+    document.getElementById('btn-next').disabled = false;
+  }
+
+  function nextQuestion() {
+    if (selectedOption === null) return;
+    answers[currentQ] = selectedOption;
+
+    if (currentQ < questions.length - 1) {
+      currentQ++;
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }
+
+  function showResult() {
+    const programKey = getProgram(answers);
+    const program = programs[programKey];
+    document.getElementById('result-title').textContent = program.title;
+    document.getElementById('result-desc').textContent = program.desc;
+    document.getElementById('form-program').value = program.title;
+    showScreen('result');
+  }
+
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'Accept': 'application/json' }
+    }).then(r => {
+      if (r.ok) showScreen('thanks');
+      else alert('Что-то пошло не так. Попробуй ещё раз.');
+    }).catch(() => {
+      showScreen('thanks');
+    });
+  }
+
+  renderQuestion();
+</script>
+</body>
+</html>
